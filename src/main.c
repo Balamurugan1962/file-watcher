@@ -3,8 +3,35 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <string.h>
+#include <limits.h>
 
 #include "types.h"
+
+void rec_list_dir(char* path){
+    DIR* dir = opendir(path);
+
+    if (!dir){
+        perror("DIR DOES NOT EXISTS");
+        exit(1);
+    }
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if( strcmp(entry->d_name,".") == 0  ||
+            strcmp(entry->d_name,"..") == 0)
+            continue;
+
+        printf("%s -> %s \t %d\n",path, entry->d_name, entry->d_type);
+
+        if(entry->d_type == DT_DIR){
+            char buffer[PATH_MAX];
+            snprintf(buffer, sizeof(buffer), "%s/%s", path, entry->d_name);
+            rec_list_dir(buffer);
+        }
+    }
+
+    closedir(dir);
+}
 
 i32 main(i32 argc, char *argv[]) {
     if(argc != 2){
@@ -17,8 +44,9 @@ i32 main(i32 argc, char *argv[]) {
 
     if (dir) {
         closedir(dir);
+        rec_list_dir(path);
     } else if (ENOENT == errno) {
-        printf("DIR DOES NOT EXISTS");
+        perror("DIR DOES NOT EXISTS");
         return 1;
     } else {
         perror("opendir() failed");
