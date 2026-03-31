@@ -7,7 +7,14 @@
 #include <string.h>
 #include <limits.h>
 
+#define STB_DS_IMPLEMENTATION
+#include "../inc/stb_ds.h"
 #include "types.h"
+
+typedef struct {
+    char* key;
+    char* value;
+}item;
 
 void rec_list_dir(char* path){
     DIR* dir = opendir(path);
@@ -60,6 +67,15 @@ i32 main(i32 argc, char *argv[]) {
         perror("opendir() failed");
         return 1;
     }
+
+    item* hash = NULL;
+
+    hmput(hash,"file1","time1");
+    hmput(hash,"file1/file","time2");
+    hmput(hash,"file2","time2");
+
+    printf("%s - \n",hmget(hash,"file1"));
+    printf("%s - \n",hmget(hash,"file1/file"));
 
     return 0;
 }
