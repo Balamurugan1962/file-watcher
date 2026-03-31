@@ -1,3 +1,4 @@
+#include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <dirent.h>
@@ -21,11 +22,18 @@ void rec_list_dir(char* path){
             strcmp(entry->d_name,"..") == 0)
             continue;
 
-        printf("%s -> %s \t %d\n",path, entry->d_name, entry->d_type);
+        char buffer[PATH_MAX];
+        snprintf(buffer, sizeof(buffer), "%s/%s", path, entry->d_name);
+
+        struct stat st;
+
+        if (stat(buffer, &st) == 0) {
+            char timebuf[100];
+            strftime(timebuf, sizeof(timebuf),"%Y-%m-%d %H:%M:%S",localtime(&st.st_mtime));
+            printf("%s (modified: %s)\n", entry->d_name, timebuf);
+        }
 
         if(entry->d_type == DT_DIR){
-            char buffer[PATH_MAX];
-            snprintf(buffer, sizeof(buffer), "%s/%s", path, entry->d_name);
             rec_list_dir(buffer);
         }
     }
