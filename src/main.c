@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,7 +17,7 @@ typedef struct {
     char* value;
 }item;
 
-void rec_list_dir(char* path){
+void rec_list_dir(char* path,item** hash){
     DIR* dir = opendir(path);
 
     if (!dir){
@@ -37,11 +38,24 @@ void rec_list_dir(char* path){
         if (stat(buffer, &st) == 0) {
             char timebuf[100];
             strftime(timebuf, sizeof(timebuf),"%Y-%m-%d %H:%M:%S",localtime(&st.st_mtime));
-            printf("%s (modified: %s)\n", entry->d_name, timebuf);
+
+            int idx = shgeti(*hash, buffer);
+
+            if (idx == -1) {
+                printf("NEW FILE \t\t\t %s\n", buffer);
+                shput(*hash, strdup(buffer), strdup(timebuf));
+            } else{
+                char* old_time = (*hash)[idx].value;
+                if (strcmp(old_time, timebuf) != 0) {
+                    printf("FILE CHANGED \t\t\t %s\n", buffer);
+                    free((*hash)[idx].value);
+                    (*hash)[idx].value = strdup(timebuf);
+                }
+            }
         }
 
-        if(entry->d_type == DT_DIR){
-            rec_list_dir(buffer);
+        if(S_ISDIR(st.st_mode)){
+            rec_list_dir(buffer,hash);
         }
     }
 
@@ -54,12 +68,16 @@ i32 main(i32 argc, char *argv[]) {
         return 1;
     }
     char* path = argv[1];
+    item* hash = NULL;
 
     DIR* dir = opendir(path);
 
     if (dir) {
         closedir(dir);
-        rec_list_dir(path);
+        while(1){
+            rec_list_dir(path,&hash);
+            sleep(3);
+        }
     } else if (ENOENT == errno) {
         perror("DIR DOES NOT EXISTS");
         return 1;
@@ -67,15 +85,6 @@ i32 main(i32 argc, char *argv[]) {
         perror("opendir() failed");
         return 1;
     }
-
-    item* hash = NULL;
-
-    hmput(hash,"file1","time1");
-    hmput(hash,"file1/file","time2");
-    hmput(hash,"file2","time2");
-
-    printf("%s - \n",hmget(hash,"file1"));
-    printf("%s - \n",hmget(hash,"file1/file"));
 
     return 0;
 }
