@@ -14,7 +14,7 @@
 
 typedef struct {
     char* key;
-    char* value;
+    time_t value;
 }item;
 
 void rec_list_dir(char* path,item** hash){
@@ -36,20 +36,21 @@ void rec_list_dir(char* path,item** hash){
         struct stat st;
 
         if (stat(buffer, &st) == 0) {
+            time_t mod_time = st.st_mtime;
+
             char timebuf[100];
-            strftime(timebuf, sizeof(timebuf),"%Y-%m-%d %H:%M:%S",localtime(&st.st_mtime));
+            strftime(timebuf, sizeof(timebuf),"%Y-%m-%d %H:%M:%S",localtime(&mod_time));
 
             int idx = shgeti(*hash, buffer);
 
             if (idx == -1) {
-                printf("NEW FILE \t\t\t %s\n", buffer);
-                shput(*hash, strdup(buffer), strdup(timebuf));
+                printf("[%s] NEW FILE \t\t %s\n",timebuf, buffer);
+                shput(*hash, strdup(buffer), mod_time);
             } else{
-                char* old_time = (*hash)[idx].value;
-                if (strcmp(old_time, timebuf) != 0) {
-                    printf("FILE CHANGED \t\t\t %s\n", buffer);
-                    free((*hash)[idx].value);
-                    (*hash)[idx].value = strdup(timebuf);
+                time_t old_time = (*hash)[idx].value;
+                if (old_time != mod_time) {
+                    printf("[%s] FILE CHANGED \t %s\n",timebuf, buffer);
+                    (*hash)[idx].value = mod_time;
                 }
             }
         }
