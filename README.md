@@ -1,7 +1,7 @@
 # file-watcher
 constantly watches for any changes for files in given dir
 
-<img src="assests/ss.png" alt="Screenshot">
+<img src="assets/ss.png" alt="Screenshot">
 
 ## NOTE:
 this is a toy project to understand file watchers to implement this in my other project.
